@@ -21,10 +21,14 @@ import com.tscale.ttouch.thread.v2.runnable.PriorityThread;
 
 public class DomainTest {
 	public static final String queryUrl = "http://panda.www.net.cn/cgi-bin/check.cgi?area_domain=";
-	
+
 	static String[] end_prefix;
 
-	private static Logger logger = Logger.getLogger(DomainTest.class);
+	private static Logger info = Logger.getLogger("MyInfo");
+
+	private static Logger debug = Logger.getLogger("MyDebug");
+
+	private static Logger error = Logger.getLogger("MyError");
 
 	static ArrayList<String> domains = new ArrayList<>();
 
@@ -32,13 +36,6 @@ public class DomainTest {
 		test();
 	}
 
-	/**
-	 * 鍒ゆ柇瀛楃涓蹭腑鏄惁鍖呭惈涓枃
-	 * 
-	 * @param str 寰呮牎楠屽瓧绗︿覆
-	 * @return 鏄惁涓轰腑鏂�
-	 * @warn 涓嶈兘鏍￠獙鏄惁涓轰腑鏂囨爣鐐圭鍙�
-	 */
 	public static boolean isContainChinese(String str) {
 		Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
 		Matcher m = p.matcher(str);
@@ -55,7 +52,7 @@ public class DomainTest {
 		Properties pro = new Properties();
 		FileInputStream in;
 		try {
-			in = new FileInputStream("a.properties");
+			in = new FileInputStream("D:\\Project\\Workspace\\JEE\\DomainScaner\\resource\\all.properties");
 			pro.load(in);
 			in.close();
 		} catch (FileNotFoundException e) {
@@ -63,17 +60,20 @@ public class DomainTest {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		end_prefix = pro.getProperty("domains").split(",");
+
+		end_prefix = pro.getProperty("two").split(",");
 	}
 
 	public static void test() {
-
+		info.debug("start process");
+		debug.debug("start process");
+		error.debug("start process");
+		
 		loadDomains();
 
 		buildDomains(1);
 
-		logger.debug("start process");
+		debug.debug("start process");
 
 		System.out.println("domains length is " + domains.size());
 		System.out.println("domains prefix length is " + end_prefix.length);
@@ -177,43 +177,48 @@ public class DomainTest {
 	}
 
 	public static void get(String url) {
-		// 1.鎵撳紑娴忚鍣�
 		CloseableHttpClient httpClient = HttpClients.createDefault();
-		// 2.澹版槑get璇锋眰
 		HttpGet httpGet = new HttpGet(url);
-		// 3.鍙戦�佽姹�
 		CloseableHttpResponse response;
 		try {
 			response = httpClient.execute(httpGet);
-			// 4.鍒ゆ柇鐘舵�佺爜
 			current_count++;
 			if (response.getStatusLine().getStatusCode() == 200) {
 				HttpEntity entity = response.getEntity();
-				// 浣跨敤宸ュ叿绫籈ntityUtils锛屼粠鍝嶅簲涓彇鍑哄疄浣撹〃绀虹殑鍐呭骞惰浆鎹㈡垚瀛楃涓�
 				String string = EntityUtils.toString(entity, "utf-8");
-//				System.out.println(url);
-				System.out.println(string);
+				// System.out.println(url);
+				debug.debug(string);
+				// System.out.println(string);
+				String logString;
 				if (string.contains("<original>210")) {
-//					logger.debug(
-//							url.substring(url.lastIndexOf("=") + 1) + " Domain name is available =================>");
-					System.out.println(
-							url.substring(url.lastIndexOf("=") + 1) + " Domain name is available =================>");
+					logString = url.substring(url.lastIndexOf("=") + 1) + " Domain name is available";
+					System.out.println(logString);
+					info.info(logString);
+				} else if (string.contains("<original>212 ")) {
+					logString = url.substring(url.lastIndexOf("=") + 1) + " Domain name is Illegal domain";
+					System.out.println(logString);
+					debug.debug(logString);
+				} else if (string.contains("<original>211 ")) {
+					logString = url.substring(url.lastIndexOf("=") + 1) + " Domain label is reserved";
+					System.out.println(logString);
+					debug.debug(logString);
 				} else {
-
-					System.out.println(url.substring(url.lastIndexOf("=") + 1) + " Domain name not available");
+					logString = url.substring(url.lastIndexOf("=") + 1) + " Domain name not available";
+					System.out.println(logString);
+					debug.debug(logString);
 				}
-
 			}
 
 			// if (current_count % 100 == 0 || (all_count - current_count) < 50) {
 			System.out.println("current is " + current_count + "/" + all_count);
 			// }
-			// 5.鍏抽棴璧勬簮
 			response.close();
 			httpClient.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(url);
+			error.error(url);
+			// System.out.println(e.getMessage());
+			error.error(e.getMessage());
 		}
 
 	}
